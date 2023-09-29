@@ -9,6 +9,10 @@ class TestGeotools:
     def test_elevation_Death_Valley(self):
         assert int(self.ge.get_elevation((27.9881, 86.9250))) == 8752
         
+    def test_elevation_Ocean(self):
+        with pytest.raises(ValueError):
+            self.ge.get_elevation((0,0))
+        
     def test_elevation_Bad_Coordinates(self):
         with pytest.raises(ValueError):
             self.ge.get_elevation([-200, 200])
