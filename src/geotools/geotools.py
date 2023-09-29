@@ -51,7 +51,7 @@ class GeoEngine():
         if response.status_code == 200:
             elevxml = response.content.decode('utf-8')
             if elevxml == "":
-                raise ValueError("Empty string returned")
+                raise ValueError("No Elevation value returned")
             root = ET.fromstring(elevxml)
             results = (root[3].text)
             return results
