@@ -1,0 +1,9 @@
+IGBP,LC_Type1,Table 3,International Geosphere-Biosphere Programme
+UMD,LC_Type2,Table 4,University of Maryland
+LAI,LC_Type3,Table 5,Leaf Area Index
+BGC,LC_Type4,Table 6,BIOME-Biogeochemical Cycles
+PFT,LC_Type5,Table 7,Plant Functional Types
+LCCS1,LC_Prop1,Table 8,Land Cover Classification System
+LCCS2,LC_Prop2,Table 9,Land Cover Classification System
+LCCS3,LC_Prop3,Table 10,Land Cover Classification System surface hydrology
+QA,QC,Table 11,Quality Assurance
