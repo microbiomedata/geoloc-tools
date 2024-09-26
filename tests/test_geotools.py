@@ -1,6 +1,6 @@
 import pytest
 
-from nmdc_geoloc_tools.geotools import GeoEngine
+from nmdc_geoloc_tools import GeoEngine
 
 
 @pytest.fixture()
