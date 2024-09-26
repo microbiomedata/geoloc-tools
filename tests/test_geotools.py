@@ -1,4 +1,4 @@
-from src.geotools.geotools import GeoEngine
+from nmdc_geoloc_tools.geotools import GeoEngine
 import pytest
 
 class TestGeotools:

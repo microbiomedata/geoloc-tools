@@ -1,10 +1,9 @@
 [tool.poetry]
-name = "geoloc-tools"
+name = "nmdc-geoloc-tools"
 version = "0.1.0"
 description = ""
 authors = ["Brian Holderman"]
 readme = "README.md"
-packages = [{include = "geoloc_tools"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
