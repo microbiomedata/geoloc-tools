@@ -1,0 +1,42 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"  # `pip` is the correct ecosystem for Poetry projects
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    allow:
+      # Allow both direct and indirect updates for all packages
+      - dependency-type: "all"
+    assignees:
+      - "pkalita-lbl"
+    groups:
+      # Group all production dependency and dev dependency updates together
+      # so that we only have to manage 2 PRs
+      dev-dependencies:
+        dependency-type: development
+        applies-to: version-updates
+          patterns:
+            - "*"
+      prod-dependencies:
+        dependency-type: production
+        applies-to: version-updates
+          patterns:
+            - "*"
+    labels:
+      - "poetry"
+      - "dependencies"
+    versioning-strategy: lockfile-only
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - "pkalita-lbl"
+    groups:
+      all-dependencies:
+        applies-to: version-updates
+          patterns:
+            - "*"
+    labels:
+      - "gh-actions"
+      - "dependencies"
