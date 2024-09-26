@@ -1,9 +1,9 @@
 import csv
 import json
-import os
 import xml.etree.ElementTree as ET
-from dataclasses import dataclass
 from datetime import datetime
+from functools import cache
+from pathlib import Path
 from typing import Tuple
 
 import requests
@@ -11,30 +11,59 @@ import requests
 LATLON = Tuple[float, float]
 
 
-@dataclass
+@cache
+def read_data_csv(filename: str) -> list:
+    with open(Path(__file__).parent / "data" / filename) as file:
+        mapping = csv.reader(file)
+        return list(mapping)
+
+
 class GeoEngine:
     """
     Wraps ORNL Identify to retrieve elevation data in meters, soil types, and land use.
     """
 
-    def get_elevation(self, latlon: LATLON) -> float:
-        """
-        Accepts decimal degrees latitude and longitude as an array (array[latitude, longitude]) and returns the elevation value in meters as a float.
-        """
+    @property
+    def zobler_soil_type_lookup(self) -> list:
+        return read_data_csv("zobler_540_MixS_lookup.csv")
+
+    @property
+    def envo_landuse_systems_lookup(self) -> list:
+        return read_data_csv("ENVO_Landuse_Systems_lookup.csv")
+
+    @property
+    def envo_landuse_lookup(self) -> list:
+        return read_data_csv("ENVO_Landuse_lookup.csv")
+
+    @staticmethod
+    def _validate_latlon(latlon: LATLON):
         lat = latlon[0]
         lon = latlon[1]
         if not -90 <= lat <= 90:
-            raise ValueError("Invalid Latitude: " + str(lat))
+            raise ValueError(f"Invalid Latitude: {lat}")
         if not -180 <= lon <= 180:
-            raise ValueError("Invalid Longitude: " + str(lon))
-        # Generate bounding box used in query from lat & lon. 0.008333333333333 comes from maplayer resolution provided by ORNL
-        remX = (lon + 180) % 0.008333333333333
-        remY = (lat + 90) % 0.008333333333333
-        minX = lon - remX
-        maxX = lon - remX + 0.008333333333333
-        minY = lat - remY
-        maxY = lat - remY + 0.008333333333333
-        BBOX = str(minX) + "," + str(minY) + "," + str(maxX) + "," + str(maxY)
+            raise ValueError(f"Invalid Longitude: {lon}")
+        return lat, lon
+
+    @staticmethod
+    def _bbox(lat: float, lon: float, resolution: float) -> str:
+        rem_x = (lon + 180) % resolution
+        rem_y = (lat + 90) % resolution
+        min_x = lon - rem_x
+        max_x = lon - rem_x + resolution
+        min_y = lat - rem_y
+        max_y = lat - rem_y + resolution
+        return f"{min_x},{min_y},{max_x},{max_y}"
+
+    def get_elevation(self, latlon: LATLON) -> float:
+        """
+        Accepts decimal degrees latitude and longitude as an array (array[latitude, longitude]) and
+        returns the elevation value in meters as a float.
+        """
+        lat, lon = self._validate_latlon(latlon)
+        # Generate bounding box used in query from lat & lon. 0.008333333333333 comes from maplayer
+        # resolution provided by ORNL
+        bbox = self._bbox(lat, lon, 0.008333333333333)
         elevparams = {
             "originator": "QAQCIdentify",
             "SERVICE": "WMS",
@@ -48,7 +77,7 @@ class GeoEngine:
             "X": "2",
             "Y": "2",
             "INFO_FORMAT": "text/xml",
-            "BBOX": BBOX,
+            "BBOX": bbox,
         }
         response = requests.get(
             "https://webmap.ornl.gov/ogcbroker/wms", params=elevparams
@@ -65,32 +94,15 @@ class GeoEngine:
 
     def get_fao_soil_type(self, latlon: LATLON) -> str:
         """
-        Accepts decimal degrees latitude and longitude as an array (array[latitude, longitude]) and returns the soil type as a string.
+        Accepts decimal degrees latitude and longitude as an array (array[latitude, longitude]) and
+        returns the soil type as a string.
         """
-        lat = latlon[0]
-        lon = latlon[1]
-        if not -90 <= lat <= 90:
-            raise ValueError("Invalid Latitude: " + str(lat))
-        if not -180 <= lon <= 180:
-            raise ValueError("Invalid Longitude: " + str(lon))
-        # Generate bounding box used in query from lat & lon. 0.5 comes from maplayer resolution provided by ORNL
-        remX = (lon + 180) % 0.5
-        remY = (lat + 90) % 0.5
-        minX = lon - remX
-        maxX = lon - remX + 0.5
-        minY = lat - remY
-        maxY = lat - remY + 0.5
+        lat, lon = self._validate_latlon(latlon)
+        # Generate bounding box used in query from lat & lon. 0.5 comes from maplayer resolution
+        # provided by ORNL
+        bbox = self._bbox(lat, lon, 0.5)
 
-        # Read in the mapping file note need to get this path right
-        with open(
-            os.path.dirname(__file__) + "/data/zobler_540_MixS_lookup.csv"
-        ) as mapper:
-            mapping = csv.reader(mapper)
-            map = list(mapping)
-
-        BBoxstring = str(minX) + "," + str(minY) + "," + str(maxX) + "," + str(maxY)
-
-        faosoilparams = {
+        fao_soil_params = {
             "INFO_FORMAT": "text/xml",
             "WIDTH": "5",
             "originator": "QAQCIdentify",
@@ -98,7 +110,7 @@ class GeoEngine:
             "LAYERS": "540_1_band1",
             "REQUEST": "GetFeatureInfo",
             "SRS": "EPSG:4326",
-            "BBOX": BBoxstring,
+            "BBOX": bbox,
             "VERSION": "1.1.1",
             "X": "2",
             "Y": "2",
@@ -107,17 +119,17 @@ class GeoEngine:
             "map": "/sdat/config/mapfile//540/540_1_wms.map",
         }
         response = requests.get(
-            "https://webmap.ornl.gov/cgi-bin/mapserv", params=faosoilparams
+            "https://webmap.ornl.gov/cgi-bin/mapserv", params=fao_soil_params
         )
         if response.status_code == 200:
-            faosoilxml = response.content.decode("utf-8")
-            if faosoilxml == "":
+            fao_soil_xml = response.content.decode("utf-8")
+            if fao_soil_xml == "":
                 raise ValueError("Empty string returned")
-            root = ET.fromstring(faosoilxml)
+            root = ET.fromstring(fao_soil_xml)
             results = root[5].text
             results = results.split(":")
             results = results[1].strip()
-            for res in map:
+            for res in self.zobler_soil_type_lookup:
                 if res[0] == results:
                     results = res[1]
                     return results
@@ -127,73 +139,54 @@ class GeoEngine:
 
     def get_landuse_dates(self, latlon: LATLON) -> []:
         """
-        Accepts decimal degrees latitude and longitude as an array (array[latitude, longitude]) and returns as array of valid dates (YYYY-MM-DD format) for the landuse requests.
+        Accepts decimal degrees latitude and longitude as an array (array[latitude, longitude]) and
+        returns as array of valid dates (YYYY-MM-DD format) for the landuse requests.
         """
-        lat = latlon[0]
-        lon = latlon[1]
-        if not -90 <= lat <= 90:
-            raise ValueError("Invalid Latitude: " + str(lat))
-        if not -180 <= lon <= 180:
-            raise ValueError("Invalid Longitude: " + str(lon))
-        landuseparams = {"latitude": lat, "longitude": lon}
+        lat, lon = self._validate_latlon(latlon)
+        landuse_params = {"latitude": lat, "longitude": lon}
         response = requests.get(
-            "https://modis.ornl.gov/rst/api/v1/MCD12Q1/dates", params=landuseparams
+            "https://modis.ornl.gov/rst/api/v1/MCD12Q1/dates", params=landuse_params
         )
         if response.status_code == 200:
-            landuseDates = response.content.decode("utf-8")
-            if landuseDates == "":
+            landuse_dates = response.content.decode("utf-8")
+            if landuse_dates == "":
                 raise ValueError("No valid Landuse dates returned")
-            data = json.loads(landuseDates)
-            validDates = []
+            data = json.loads(landuse_dates)
+            valid_dates = []
             for date in data["dates"]:
-                validDates.append(date["calendar_date"])
-            return validDates
+                valid_dates.append(date["calendar_date"])
+            return valid_dates
         else:
             raise ApiException(response.status_code)
 
-    def get_landuse(self, latlon: LATLON, startDate, endDate) -> {}:
+    def get_landuse(self, latlon: LATLON, start_date, end_date) -> {}:
         """
-        Accepts decimal degrees latitude and longitude as an array (array[latitude, longitude]), the start date (YYYY-MM-DD), and end date (YYYY-MM-DD) and returns a dictionary containing the land use values for the classification systems for the dates requested.
+        Accepts decimal degrees latitude and longitude as an array (array[latitude, longitude]), the
+        start date (YYYY-MM-DD), and end date (YYYY-MM-DD) and returns a dictionary containing the
+        land use values for the classification systems for the dates requested.
         """
-        lat = latlon[0]
-        lon = latlon[1]
-        if not -90 <= lat <= 90:
-            raise ValueError("Invalid Latitude: " + str(lat))
-        if not -180 <= lon <= 180:
-            raise ValueError("Invalid Longitude: " + str(lon))
+        lat, lon = self._validate_latlon(latlon)
         # function accepts dates in YYYY-MM-DD format, but API requires a unique format (AYYYYDOY)
         date_format = "%Y-%m-%d"
-        start_date_obj = datetime.strptime(startDate, date_format)
-        end_date_obj = datetime.strptime(endDate, date_format)
+        start_date_obj = datetime.strptime(start_date, date_format)
+        end_date_obj = datetime.strptime(end_date, date_format)
 
-        apiStartDate = (
+        api_start_date = (
             "A" + str(start_date_obj.year) + str(start_date_obj.strftime("%j"))
         )
-        apiEndDate = "A" + str(end_date_obj.year) + str(end_date_obj.strftime("%j"))
+        api_end_date = "A" + str(end_date_obj.year) + str(end_date_obj.strftime("%j"))
 
-        landuseparams = {
+        landuse_params = {
             "latitude": lat,
             "longitude": lon,
-            "startDate": apiStartDate,
-            "endDate": apiEndDate,
+            "startDate": api_start_date,
+            "endDate": api_end_date,
             "kmAboveBelow": 0,
             "kmLeftRight": 0,
         }
         response = requests.get(
-            "https://modis.ornl.gov/rst/api/v1/MCD12Q1/subset", params=landuseparams
+            "https://modis.ornl.gov/rst/api/v1/MCD12Q1/subset", params=landuse_params
         )
-        # Retrieve Classification System mapping
-        with open(
-            os.path.dirname(__file__) + "/data/ENVO_Landuse_Systems_lookup.csv"
-        ) as mapper:
-            mapping = csv.reader(mapper)
-            sytems_map = list(mapping)
-        # Retrieve Classification System to ENVO mapping
-        with open(
-            os.path.dirname(__file__) + "/data/ENVO_Landuse_lookup.csv"
-        ) as mapper:
-            mapping = csv.reader(mapper)
-            landuse_map = list(mapping)
         if response.status_code == 200:
             landuse = response.content.decode("utf-8")
             results = {}
@@ -203,10 +196,10 @@ class GeoEngine:
             for band in data["subset"]:
                 system = "NONE"
                 band["data"] = list(map(int, band["data"]))
-                for res in sytems_map:
+                for res in self.envo_landuse_systems_lookup:
                     if res[1] == band["band"]:
                         system = res[0]
-                for res in landuse_map:
+                for res in self.envo_landuse_lookup:
                     if res[8] == system and int(res[1]) in band["data"]:
                         envo_term = res[2]
                         if envo_term == "":
