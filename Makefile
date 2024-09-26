@@ -1,4 +1,4 @@
-.PHONY: test
+.PHONY: test lint lint-fix
 
 test:
 	pytest tests
