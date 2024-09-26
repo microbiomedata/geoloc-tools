@@ -2,7 +2,10 @@
 name = "nmdc-geoloc-tools"
 version = "0.0.0"
 description = ""
-authors = ["Brian Holderman"]
+authors = [
+    "Brian Holderman",
+    "Patrick Kalita <pkalita@lbl.gov>"
+]
 readme = "README.md"
 
 [tool.poetry.dependencies]
