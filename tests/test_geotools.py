@@ -50,7 +50,5 @@ def test_landuse_date_death_valley(engine):
 
 
 def test_landuse_death_valley(engine):
-    data = engine.get_landuse(
-        (36.5322649, -116.9325408), "2001-01-01", "2002-01-01"
-    )
+    data = engine.get_landuse((36.5322649, -116.9325408), "2001-01-01", "2002-01-01")
     assert data["LCCS1"][0]["envo_term"] == "area of barren land"
