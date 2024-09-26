@@ -1,12 +1,14 @@
 .PHONY: test lint lint-fix
 
+RUN = poetry run
+
 test:
-	pytest tests
+	$(RUN) pytest tests
 
 lint:
-	ruff format --check
-	ruff check
+	$(RUN) ruff format --check
+	$(RUN) ruff check
 
 lint-fix:
-	ruff check --fix
-	ruff format
+	$(RUN) ruff check --fix
+	$(RUN) ruff format
