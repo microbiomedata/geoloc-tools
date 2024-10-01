@@ -15,13 +15,13 @@ updates:
       dev-dependencies:
         dependency-type: development
         applies-to: version-updates
-          patterns:
-            - "*"
+        patterns:
+          - "*"
       prod-dependencies:
         dependency-type: production
         applies-to: version-updates
-          patterns:
-            - "*"
+        patterns:
+          - "*"
     labels:
       - "poetry"
       - "dependencies"
@@ -35,8 +35,8 @@ updates:
     groups:
       all-dependencies:
         applies-to: version-updates
-          patterns:
-            - "*"
+        patterns:
+          - "*"
     labels:
       - "gh-actions"
       - "dependencies"
