@@ -79,9 +79,7 @@ def elevation(latlon: LATLON) -> float:
         "INFO_FORMAT": "text/xml",
         "BBOX": bbox,
     }
-    response = requests.get(
-        "https://webmap.ornl.gov/ogcbroker/wms", params=elevparams
-    )
+    response = requests.get("https://webmap.ornl.gov/ogcbroker/wms", params=elevparams)
     if response.status_code == 200:
         elevxml = response.content.decode("utf-8")
         if elevxml == "":
@@ -177,9 +175,7 @@ def landuse(latlon: LATLON, start_date, end_date) -> {}:
     start_date_obj = datetime.strptime(start_date, date_format)
     end_date_obj = datetime.strptime(end_date, date_format)
 
-    api_start_date = (
-        "A" + str(start_date_obj.year) + str(start_date_obj.strftime("%j"))
-    )
+    api_start_date = "A" + str(start_date_obj.year) + str(start_date_obj.strftime("%j"))
     api_end_date = "A" + str(end_date_obj.year) + str(end_date_obj.strftime("%j"))
 
     landuse_params = {
