@@ -6,7 +6,7 @@ import csv
 import json
 import xml.etree.ElementTree as ET
 from datetime import datetime
-from functools import cache
+from functools import cache, lru_cache
 from pathlib import Path
 from typing import Tuple
 
@@ -54,6 +54,7 @@ def _bbox(lat: float, lon: float, resolution: float) -> str:
     return f"{min_x},{min_y},{max_x},{max_y}"
 
 
+@lru_cache
 def elevation(latlon: LATLON) -> float:
     """
     Accepts decimal degrees latitude and longitude as an array (array[latitude, longitude]) and
@@ -92,6 +93,7 @@ def elevation(latlon: LATLON) -> float:
         raise ApiException(response.status_code)
 
 
+@lru_cache
 def fao_soil_type(latlon: LATLON) -> str:
     """
     Accepts decimal degrees latitude and longitude as an array (array[latitude, longitude]) and
@@ -138,6 +140,7 @@ def fao_soil_type(latlon: LATLON) -> str:
         raise ApiException(response.status_code)
 
 
+@lru_cache
 def landuse_dates(latlon: LATLON) -> []:
     """
     Accepts decimal degrees latitude and longitude as an array (array[latitude, longitude]) and
@@ -161,6 +164,7 @@ def landuse_dates(latlon: LATLON) -> []:
         raise ApiException(response.status_code)
 
 
+@lru_cache
 def landuse(latlon: LATLON, start_date, end_date) -> {}:
     """
     Accepts decimal degrees latitude and longitude as an array (array[latitude, longitude]), the

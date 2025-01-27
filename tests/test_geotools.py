@@ -1,4 +1,5 @@
 import pytest
+import requests
 
 from nmdc_geoloc_tools import elevation, fao_soil_type, landuse, landuse_dates
 
@@ -19,6 +20,22 @@ def test_elevation_ocean():
 def test_elevation_bad_coordinates():
     with pytest.raises(ValueError):
         elevation((-200, 200))
+
+
+def test_elevation_caching(mocker):
+    spy = mocker.spy(requests, "get")
+
+    # First call should make a request
+    elevation((45, -120))
+    assert spy.call_count == 1
+
+    # Second call should not make an additional request
+    elevation((45, -120))
+    assert spy.call_count == 1
+
+    # A call with different coordinates should make a request
+    elevation((46, -120))
+    assert spy.call_count == 2
 
 
 def test_soil_type_cambisols():
