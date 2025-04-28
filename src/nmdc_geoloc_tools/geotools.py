@@ -116,7 +116,7 @@ def fao_soil_type(latlon: LATLON) -> str:
         "Y": "2",
         "SERVICE": "WMS",
         "QUERY_LAYERS": "540_1_band1",
-        "map": "/sdat/config/mapfile//540/540_1_wms.map",
+        "map": "/sdat/config/mapfile/540/540_1_wms.map",
     }
     response = requests.get(
         "https://webmap.ornl.gov/cgi-bin/mapserv", params=fao_soil_params
