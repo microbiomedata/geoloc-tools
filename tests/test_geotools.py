@@ -5,16 +5,15 @@ from nmdc_geoloc_tools import elevation, fao_soil_type, landuse, landuse_dates
 
 
 def test_elevation_mount_everest():
-    assert int(elevation((27.9881, 86.9250))) == 8752
+    assert int(elevation((27.9881, 86.9250))) == 8729
 
 
 def test_elevation_death_valley():
-    assert int(elevation((36.5322649, -116.9325408))) == -66
+    assert int(elevation((36.5322649, -116.9325408))) == -80
 
 
 def test_elevation_ocean():
-    with pytest.raises(ValueError):
-        elevation((0, 0))
+    assert int(elevation((0, 0))) == -3492
 
 
 def test_elevation_bad_coordinates():

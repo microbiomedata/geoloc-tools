@@ -9,7 +9,10 @@ from datetime import datetime
 from functools import cache, lru_cache
 from pathlib import Path
 from typing import Tuple
-
+import os
+from dotenv import load_dotenv
+load_dotenv()
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 import requests
 
 LATLON = Tuple[float, float]
@@ -61,31 +64,16 @@ def elevation(latlon: LATLON) -> float:
     returns the elevation value in meters as a float.
     """
     lat, lon = _validate_latlon(latlon)
-    # Generate bounding box used in query from lat & lon. 0.008333333333333 comes from maplayer
-    # resolution provided by ORNL
-    bbox = _bbox(lat, lon, 0.008333333333333)
-    elevparams = {
-        "originator": "QAQCIdentify",
-        "SERVICE": "WMS",
-        "VERSION": "1.1.1",
-        "REQUEST": "GetFeatureInfo",
-        "SRS": "EPSG:4326",
-        "WIDTH": "5",
-        "HEIGHT": "5",
-        "LAYERS": "10003_1",
-        "QUERY_LAYERS": "10003_1",
-        "X": "2",
-        "Y": "2",
-        "INFO_FORMAT": "text/xml",
-        "BBOX": bbox,
+    params = {
+        "locations": f"{lat},{lon}",
+        "key": GOOGLE_API_KEY
     }
-    response = requests.get("https://webmap.ornl.gov/ogcbroker/wms", params=elevparams)
+    response = requests.get("https://maps.googleapis.com/maps/api/elevation/json", params=params)
     if response.status_code == 200:
-        elevxml = response.content.decode("utf-8")
-        if elevxml == "":
+        elevjson = response.json()
+        if elevjson["results"] == []:
             raise ValueError("No Elevation value returned")
-        root = ET.fromstring(elevxml)
-        results = root[3].text
+        results = elevjson["results"][0]["elevation"]
         return float(results)
     else:
         raise ApiException(response.status_code)
