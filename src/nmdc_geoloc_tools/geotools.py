@@ -55,7 +55,7 @@ def _bbox(lat: float, lon: float, resolution: float) -> str:
 
 
 @lru_cache
-def elevation(latlon: LATLON, google_api_key:str=None) -> float:
+def elevation(latlon: LATLON, google_api_key: str = None) -> float:
     """
     Accepts decimal degrees latitude and longitude as an array (array[latitude, longitude]) and
     returns the elevation value in meters as a float.
@@ -63,7 +63,9 @@ def elevation(latlon: LATLON, google_api_key:str=None) -> float:
     if google_api_key is None:
         google_api_key = os.getenv("GOOGLE_API_KEY")
         if google_api_key is None:
-            raise ValueError("The Google API key needs to be provided either through the function argument or an environment variable")
+            raise ValueError(
+                "The Google API key needs to be provided either through the function argument or an environment variable"
+            )
     lat, lon = _validate_latlon(latlon)
     params = {"locations": f"{lat},{lon}", "key": google_api_key}
     response = requests.get(
