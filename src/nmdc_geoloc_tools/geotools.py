@@ -11,9 +11,11 @@ from pathlib import Path
 from typing import Tuple
 import os
 from dotenv import load_dotenv
+import requests
+
 load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-import requests
+
 
 LATLON = Tuple[float, float]
 
@@ -64,11 +66,10 @@ def elevation(latlon: LATLON) -> float:
     returns the elevation value in meters as a float.
     """
     lat, lon = _validate_latlon(latlon)
-    params = {
-        "locations": f"{lat},{lon}",
-        "key": GOOGLE_API_KEY
-    }
-    response = requests.get("https://maps.googleapis.com/maps/api/elevation/json", params=params)
+    params = {"locations": f"{lat},{lon}", "key": GOOGLE_API_KEY}
+    response = requests.get(
+        "https://maps.googleapis.com/maps/api/elevation/json", params=params
+    )
     if response.status_code == 200:
         elevjson = response.json()
         if elevjson["results"] == []:
