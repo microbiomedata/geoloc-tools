@@ -7,10 +7,8 @@ from nmdc_geoloc_tools import elevation, fao_soil_type, landuse, landuse_dates
 
 def test_elevation_mount_everest():
     with requests_mock.Mocker() as m:
-        # Mocking the base URL, not including query parameters directly in the URL
         m.get(
             "https://maps.googleapis.com/maps/api/elevation/json",
-            # The matcher checks the actual query parameters
             additional_matcher=lambda request: request.qs == {"locations": ["27.9881,86.925"], "key": ["test_api_key"]},
             json={
                 "results": [{"elevation": 8729}]
@@ -45,7 +43,6 @@ def test_elevation_bad_coordinates():
 
 def test_elevation_caching(mocker):
     with requests_mock.Mocker() as m:
-        # Mock the API response for specific coordinates
         m.get("https://maps.googleapis.com/maps/api/elevation/json", 
             additional_matcher=lambda request: request.qs == {"locations": ["45,-120"], "key": ["test_api_key"]},
             json={
