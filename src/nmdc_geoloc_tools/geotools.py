@@ -4,19 +4,18 @@ Functions which wrap ORNL Identify to retrieve elevation data in meters, soil ty
 
 import csv
 import json
+import os
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from functools import cache, lru_cache
 from pathlib import Path
 from typing import Tuple
-import os
-from dotenv import load_dotenv
+
 import requests
+from dotenv import load_dotenv
 
 load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-
-
 LATLON = Tuple[float, float]
 
 
