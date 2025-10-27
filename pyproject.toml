@@ -11,11 +11,13 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.9"
 requests = ">=2.0.0"
+python-dotenv = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.2"
 ruff = "^0.6.8"
 pytest-mock = "^3.14.0"
+requests-mock = "^1.11.0"
 
 [tool.poetry-dynamic-versioning]
 enable = true

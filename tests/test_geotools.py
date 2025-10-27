@@ -1,53 +1,90 @@
 import pytest
 import requests
+import requests_mock
 
 from nmdc_geoloc_tools import elevation, fao_soil_type, landuse, landuse_dates
 
 
 def test_elevation_mount_everest():
-    assert int(elevation((27.9881, 86.9250))) == 8752
+    with requests_mock.Mocker() as m:
+        m.get(
+            "https://maps.googleapis.com/maps/api/elevation/json",
+            additional_matcher=lambda request: request.qs
+            == {"locations": ["27.9881,86.925"], "key": ["test_api_key"]},
+            json={"results": [{"elevation": 8729}]},
+        )
+        assert int(elevation((27.9881, 86.9250), "test_api_key")) == 8729
 
 
 def test_elevation_death_valley():
-    assert int(elevation((36.5322649, -116.9325408))) == -66
+    with requests_mock.Mocker() as m:
+        m.get(
+            "https://maps.googleapis.com/maps/api/elevation/json",
+            additional_matcher=lambda request: request.qs
+            == {"locations": ["36.5322649,-116.9325408"], "key": ["test_api_key"]},
+            json={"results": [{"elevation": -80}]},
+        )
+        assert int(elevation((36.5322649, -116.9325408), "test_api_key")) == -80
 
 
 def test_elevation_ocean():
-    with pytest.raises(ValueError):
-        elevation((0, 0))
+    with requests_mock.Mocker() as m:
+        m.get(
+            "https://maps.googleapis.com/maps/api/elevation/json",
+            additional_matcher=lambda request: request.qs
+            == {"locations": ["0,0"], "key": ["test_api_key"]},
+            json={"results": [{"elevation": -3492}]},
+        )
+        assert int(elevation((0, 0), "test_api_key")) == -3492
 
 
 def test_elevation_bad_coordinates():
     with pytest.raises(ValueError):
-        elevation((-200, 200))
+        elevation((-200, 200), "test_api_key")
 
 
 def test_elevation_caching(mocker):
-    spy = mocker.spy(requests, "get")
+    with requests_mock.Mocker() as m:
+        m.get(
+            "https://maps.googleapis.com/maps/api/elevation/json",
+            additional_matcher=lambda request: request.qs
+            == {"locations": ["45,-120"], "key": ["test_api_key"]},
+            json={"results": [{"elevation": 100}]},
+        )
 
-    # First call should make a request
-    elevation((45, -120))
-    assert spy.call_count == 1
+        # Spy on requests.get method
+        spy = mocker.spy(requests, "get")
 
-    # Second call should not make an additional request
-    elevation((45, -120))
-    assert spy.call_count == 1
+        result1 = elevation((45, -120), "test_api_key")
+        assert result1 == 100
+        assert spy.call_count == 1
 
-    # A call with different coordinates should make a request
-    elevation((46, -120))
-    assert spy.call_count == 2
+        result2 = elevation((45, -120), "test_api_key")
+        assert result2 == 100
+        assert spy.call_count == 1
+        m.get(
+            "https://maps.googleapis.com/maps/api/elevation/json",
+            additional_matcher=lambda request: request.qs
+            == {"locations": ["46,-120"], "key": ["test_api_key"]},
+            json={"results": [{"elevation": 100}]},
+        )
+        result3 = elevation((46, -120), "test_api_key")
+        assert result3 == 100
+        assert spy.call_count == 2
 
 
 def test_soil_type_cambisols():
-    assert fao_soil_type((32.95047, -87.393259)) == "Cambisols"
+    with pytest.raises(NotImplementedError):
+        fao_soil_type((32.95047, -87.393259))
 
 
 def test_soil_type_water():
-    assert fao_soil_type((0, 0)) == "Water"
+    with pytest.raises(NotImplementedError):
+        fao_soil_type((0, 0))
 
 
 def test_soil_type_bad_coordinates():
-    with pytest.raises(ValueError):
+    with pytest.raises(NotImplementedError):
         fao_soil_type((-200, 200))
 
 

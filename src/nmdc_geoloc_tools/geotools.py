@@ -4,7 +4,7 @@ Functions which wrap ORNL Identify to retrieve elevation data in meters, soil ty
 
 import csv
 import json
-import xml.etree.ElementTree as ET
+import os
 from datetime import datetime
 from functools import cache, lru_cache
 from pathlib import Path
@@ -55,37 +55,27 @@ def _bbox(lat: float, lon: float, resolution: float) -> str:
 
 
 @lru_cache
-def elevation(latlon: LATLON) -> float:
+def elevation(latlon: LATLON, google_api_key: str = None) -> float:
     """
     Accepts decimal degrees latitude and longitude as an array (array[latitude, longitude]) and
     returns the elevation value in meters as a float.
     """
+    if google_api_key is None:
+        google_api_key = os.getenv("GOOGLE_API_KEY")
+        if google_api_key is None:
+            raise ValueError(
+                "The Google API key needs to be provided either through the function argument or an environment variable"
+            )
     lat, lon = _validate_latlon(latlon)
-    # Generate bounding box used in query from lat & lon. 0.008333333333333 comes from maplayer
-    # resolution provided by ORNL
-    bbox = _bbox(lat, lon, 0.008333333333333)
-    elevparams = {
-        "originator": "QAQCIdentify",
-        "SERVICE": "WMS",
-        "VERSION": "1.1.1",
-        "REQUEST": "GetFeatureInfo",
-        "SRS": "EPSG:4326",
-        "WIDTH": "5",
-        "HEIGHT": "5",
-        "LAYERS": "10003_1",
-        "QUERY_LAYERS": "10003_1",
-        "X": "2",
-        "Y": "2",
-        "INFO_FORMAT": "text/xml",
-        "BBOX": bbox,
-    }
-    response = requests.get("https://webmap.ornl.gov/ogcbroker/wms", params=elevparams)
+    params = {"locations": f"{lat},{lon}", "key": google_api_key}
+    response = requests.get(
+        "https://maps.googleapis.com/maps/api/elevation/json", params=params
+    )
     if response.status_code == 200:
-        elevxml = response.content.decode("utf-8")
-        if elevxml == "":
+        elevjson = response.json()
+        if elevjson["results"] == []:
             raise ValueError("No Elevation value returned")
-        root = ET.fromstring(elevxml)
-        results = root[3].text
+        results = elevjson["results"][0]["elevation"]
         return float(results)
     else:
         raise ApiException(response.status_code)
@@ -97,45 +87,7 @@ def fao_soil_type(latlon: LATLON) -> str:
     Accepts decimal degrees latitude and longitude as an array (array[latitude, longitude]) and
     returns the soil type as a string.
     """
-    lat, lon = _validate_latlon(latlon)
-    # Generate bounding box used in query from lat & lon. 0.5 comes from maplayer resolution
-    # provided by ORNL
-    bbox = _bbox(lat, lon, 0.5)
-
-    fao_soil_params = {
-        "INFO_FORMAT": "text/xml",
-        "WIDTH": "5",
-        "originator": "QAQCIdentify",
-        "HEIGHT": "5",
-        "LAYERS": "540_1_band1",
-        "REQUEST": "GetFeatureInfo",
-        "SRS": "EPSG:4326",
-        "BBOX": bbox,
-        "VERSION": "1.1.1",
-        "X": "2",
-        "Y": "2",
-        "SERVICE": "WMS",
-        "QUERY_LAYERS": "540_1_band1",
-        "map": "/sdat/config/mapfile/540/540_1_wms.map",
-    }
-    response = requests.get(
-        "https://webmap.ornl.gov/cgi-bin/mapserv", params=fao_soil_params
-    )
-    if response.status_code == 200:
-        fao_soil_xml = response.content.decode("utf-8")
-        if fao_soil_xml == "":
-            raise ValueError("Empty string returned")
-        root = ET.fromstring(fao_soil_xml)
-        results = root[5].text
-        results = results.split(":")
-        results = results[1].strip()
-        for res in _zobler_soil_type_lookup():
-            if res[0] == results:
-                results = res[1]
-                return results
-        raise ValueError("Response mapping failed")
-    else:
-        raise ApiException(response.status_code)
+    raise NotImplementedError("FAO soil type function is not implemented at this time.")
 
 
 @lru_cache
