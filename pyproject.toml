@@ -1,29 +1,31 @@
-[tool.poetry]
+[project]
 name = "nmdc-geoloc-tools"
-version = "0.0.0"
-description = ""
+dynamic = ["version"]
+description = "NMDC library to request geolocation information including elevation, soil type, and landuse"
 authors = [
-    "Brian Holderman",
-    "Patrick Kalita <pkalita@lbl.gov>"
+    {name = "Brian Holderman"},
+    {name = "Patrick Kalita", email = "pkalita@lbl.gov"}
 ]
 readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.0.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-requests = ">=2.0.0"
+[dependency-groups]
+dev = [
+    "pytest>=7.4.2",
+    "ruff>=0.6.8",
+    "pytest-mock>=3.14.0",
+    "requests-mock>=1.11.0",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.4.2"
-ruff = "^0.6.8"
-pytest-mock = "^3.14.0"
-requests-mock = "^1.11.0"
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
 
-[tool.poetry-dynamic-versioning]
-enable = true
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I"]
-
-[build-system]
-requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
-build-backend = "poetry_dynamic_versioning.backend"
