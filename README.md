@@ -1,21 +1,21 @@
 # GeoEngine geolocation tool
-Library to request information about a location regarding the elevation, soil type, and landuse from web services host at Oak Ridge National Laboratory.
+Library to request information about a location regarding the elevation, soil type, and landuse from various web services:
 
-See https://modis.ornl.gov/rst/ui/#!/products/get_products for more information
+* [ORNL MODIS](https://modis.ornl.gov/rst/ui/#!/products/get_products)
+* [Google Maps Platform](https://developers.google.com/maps/documentation)
 
 ## Development
 
 ### Prerequisites
 
-- [Poetry](https://python-poetry.org/docs/#installation)
-- [Poetry dynamic versioning plugin](https://github.com/mtkennerly/poetry-dynamic-versioning?tab=readme-ov-file#installation)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)
 
 ### Setup
 
-Install dependencies with Poetry. This will also create a new virtual environment if necessary.
+Install dependencies with uv. This will also create a new virtual environment if necessary.
 
 ```bash
-poetry install
+uv sync
 ```
 
 ### Testing

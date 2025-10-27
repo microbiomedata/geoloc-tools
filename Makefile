@@ -1,6 +1,6 @@
 .PHONY: test lint lint-fix
 
-RUN = poetry run
+RUN = uv run
 
 test:
 	$(RUN) pytest tests
